@@ -1,0 +1,21 @@
+# build output
+build/
+out/
+cmake-build-*/
+CMakeUserPresets.json
+*.exe
+*.o
+*.obj
+*.log
+
+# editors / IDEs
+.vscode/
+.vs/
+.idea/
+*.cbp
+*.layout
+*.depend
+
+# OS junk
+.DS_Store
+Thumbs.db
