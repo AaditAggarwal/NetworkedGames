@@ -1,4 +1,4 @@
-# build tools for Networked Battleship, installed into a venv (nothing global)
+# build tools for Networked Battleship, installed into a venv
 #   python -m venv .venv            (macOS/Linux: python3)
 #   .venv\Scripts\activate          (macOS/Linux: source .venv/bin/activate)
 #   pip install -r requirements.txt
