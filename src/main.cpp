@@ -4,6 +4,7 @@
 #include <deque>
 #include <iostream>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -52,6 +53,19 @@ static std::string renderEnemy(const PeerGame& g) {
         out += '\n';
     }
     return out;
+}
+
+static void printBoards(const DemoFleet& fleet, const PeerGame& g) {
+    std::istringstream mine(fleet.render()), theirs(renderEnemy(g));
+    std::string a, b;
+    std::cout << "\n  YOUR FLEET                   ENEMY WATERS\n";
+    while (std::getline(mine, a) && std::getline(theirs, b)) {
+        a.resize(29, ' ');
+        std::cout << a << b << "\n";
+    }
+    if (g.state() == State::MyTurn) std::cout << ">> your turn, type a cell like B7\n";
+    else if (g.state() == State::PeerTurn) std::cout << ">> opponent's turn, wait...\n";
+    std::cout << "\n";
 }
 
 static sock_t connectInteractive(bool& isHost, std::string& name) {
@@ -143,8 +157,7 @@ int main(int argc, char** argv) {
             for (char& ch : cmd) ch = (char)std::tolower((unsigned char)ch);
             int r, c;
             if (cmd == "ready") game.onAllPlaced();
-            else if (cmd == "board") std::cout << fleet.render();
-            else if (cmd == "enemy") std::cout << renderEnemy(game);
+            else if (cmd == "board" || cmd == "enemy") printBoards(fleet, game);
             else if (cmd == "quit") { game.quit(); quit = true; }
             else if (cmd.rfind("fire ", 0) == 0 && parseCell(cmd.substr(5), r, c)) game.fire(r, c);
             else if (parseCell(cmd, r, c)) game.fire(r, c);
@@ -155,7 +168,12 @@ int main(int argc, char** argv) {
             std::cout << "> " << out << "\n";
             if (open && !sendLine(s, out)) { game.onDisconnect(); open = false; }
         }
-        for (const std::string& e : game.takeEvents()) std::cout << "* " << e << "\n";
+        bool redraw = false;
+        for (const std::string& e : game.takeEvents()) {
+            std::cout << "* " << e << "\n";
+            redraw |= e.rfind("your shot", 0) == 0 || e.rfind("opponent fired", 0) == 0 || e.rfind("battle starts", 0) == 0;
+        }
+        if (redraw) printBoards(fleet, game);
 
         if (game.state() == State::GameOver) open = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(16));

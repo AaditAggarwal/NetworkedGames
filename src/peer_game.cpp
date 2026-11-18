@@ -100,6 +100,8 @@ void PeerGame::maybeStart() {
 }
 
 bool PeerGame::fire(int row, int col) {
+    if (state_ == State::Placing) { event("type ready first"); return false; }
+    if (state_ == State::WaitReady) { event("waiting for the opponent to type ready"); return false; }
     if (state_ != State::MyTurn) { event("not your turn"); return false; }
     if (row < 0 || row >= GRID || col < 0 || col >= GRID) return false;
     if (enemy_[row][col] != Mark::None) { event("you already fired at " + cellName(row, col)); return false; }
