@@ -1,1 +1,29 @@
-..... for now
+Downloads needed to build and run Networked Battleship
+
+Windows
+  1. Git                      https://git-scm.com/download/win
+  2. MinGW-w64 g++ (C++17)    https://winlibs.com  (add its bin folder to PATH, gives g++ and mingw32-make)
+  3. raylib 5.5               https://github.com/raysan5/raylib/releases/tag/5.5  -> raylib-5.5_win64_mingw-w64.zip, unzip anywhere
+  build: mingw32-make client RAYLIB=C:/path/to/raylib-5.5_win64_mingw-w64
+  then copy raylib.dll (from the raylib lib folder) next to build/battleship.exe
+
+macOS
+  1. Xcode command line tools (git, clang, make):  xcode-select --install
+  2. Homebrew                                      https://brew.sh
+  3. raylib:                                       brew install raylib
+  build: make client RAYLIB=$(brew --prefix)
+
+Linux (Ubuntu / Debian / WSL2 with GUI)
+  1. sudo apt install git g++ make cmake libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+  2. raylib 5.5 from source:
+       git clone --depth 1 --branch 5.5 https://github.com/raysan5/raylib.git
+       cd raylib/src && make PLATFORM=PLATFORM_DESKTOP && sudo make install
+  build: make client
+
+Run (all devices)
+  host:  build/battleship host 5000 <name>
+  join:  build/battleship join <host's ip> 5000 <name>
+  both players on the same network (phone hotspot is safest), host allows the firewall prompt
+
+Optional
+  Wireshark    https://www.wireshark.org/download.html   (capture the game for the presentation)
