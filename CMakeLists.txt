@@ -13,6 +13,9 @@ if (WIN32)
   target_link_libraries(core PUBLIC ws2_32 iphlpapi)
   target_compile_definitions(core PUBLIC _WIN32_WINNT=0x0601)
 endif()
+if (MINGW)
+  target_link_options(core INTERFACE -static)   # friends don't need MinGW's DLLs
+endif()
 
 add_executable(battleship_server server/main.cpp)
 target_link_libraries(battleship_server PRIVATE core)

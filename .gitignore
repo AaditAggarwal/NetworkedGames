@@ -8,6 +8,9 @@ CMakeUserPresets.json
 *.obj
 *.log
 
+# python venv for the build tools
+.venv/
+
 # editors / IDEs
 .vscode/
 .vs/
