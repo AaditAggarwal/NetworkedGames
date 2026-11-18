@@ -18,7 +18,7 @@ ifneq ($(RAYLIB),)
 endif
 
 ifeq ($(OS),Windows_NT)
-  NET_LIBS = -lws2_32 -liphlpapi
+  NET_LIBS = -lws2_32 -liphlpapi -static   # -static: friends don't need MinGW's DLLs
   RAYLIB_LIBS ?= -lraylib -lopengl32 -lgdi32 -lwinmm
 else ifeq ($(shell uname),Darwin)
   NET_LIBS = -pthread
