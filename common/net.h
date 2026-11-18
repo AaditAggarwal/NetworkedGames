@@ -43,6 +43,11 @@ private:
     std::string err_;
 };
 
+//for the game server: a non-blocking listener that accepts many clients
+sock_t listenOn(uint16_t port, std::string& err);
+sock_t acceptClient(sock_t listener);   //BAD_SOCK if nobody is waiting
+void waitReadable(const std::vector<sock_t>& socks, int ms);
+
 std::vector<std::string> localAddresses();
 
 bool sendLine(sock_t s, const std::string& line);

@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstring>
+#include <thread>
 
 #ifdef _WIN32
   #if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0601
@@ -77,7 +78,7 @@ static bool makeAddr(const std::string& ip, uint16_t port, sockaddr_in& a) {
     return inet_pton(AF_INET, host.c_str(), &a.sin_addr) == 1;
 }
 
-static native_t openListener(uint16_t port, int& err) {
+static native_t openListener(uint16_t port, int& err, int backlog = 1) {
     native_t ls = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (H(ls) == BAD_SOCK) { err = lastErr(); return ls; }
 #ifndef _WIN32
@@ -88,7 +89,7 @@ static native_t openListener(uint16_t port, int& err) {
     a.sin_family = AF_INET;
     a.sin_port = htons(port);
     a.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(ls, (sockaddr*)&a, sizeof a) != 0 || listen(ls, 1) != 0) {
+    if (bind(ls, (sockaddr*)&a, sizeof a) != 0 || listen(ls, backlog) != 0) {
         err = lastErr();
         closeNative(ls);
         return (native_t)BAD_SOCK;
@@ -225,6 +226,34 @@ void Connector::cancel() {
     listen_ = sock_ = BAD_SOCK;
     state_ = ConnState::Idle;
     err_.clear();
+}
+
+sock_t listenOn(uint16_t port, std::string& errOut) {
+    int err = 0;
+    native_t ls = openListener(port, err, 4);
+    if (H(ls) == BAD_SOCK) { errOut = "cannot listen on port " + std::to_string(port) + ": " + errText(err); return BAD_SOCK; }
+    if (!setNonBlocking(ls)) { closeNative(ls); errOut = "cannot make the listener non-blocking"; return BAD_SOCK; }
+    return H(ls);
+}
+
+sock_t acceptClient(sock_t listener) {
+    return H(accept(N(listener), nullptr, nullptr));
+}
+
+void waitReadable(const std::vector<sock_t>& socks, int ms) {
+    fd_set rd;
+    FD_ZERO(&rd);
+    native_t top = 0;
+    int count = 0;
+    for (sock_t s : socks) {
+        if (s == BAD_SOCK) continue;
+        FD_SET(N(s), &rd);
+        if (N(s) > top) top = N(s);
+        ++count;
+    }
+    if (count == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); return; }   //Windows select fails on empty sets
+    timeval tv{ms / 1000, (ms % 1000) * 1000};
+    select((int)top + 1, &rd, nullptr, nullptr, &tv);
 }
 
 std::vector<std::string> localAddresses() {

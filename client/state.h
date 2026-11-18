@@ -30,6 +30,9 @@ struct ClientState {
     std::string port = "5000";
     std::string name = "Player";
     int focus = 0;                 // 0 host, 1 port, 2 name
+    bool wantHost = false;         // HOST pressed, main.cpp starts the server
+    bool hosting = false;          // this window also runs the game server
+    std::string joinAt;            // "192.168.1.5:5000", shown so the other player knows where to join
 
     // ---- session ----
     Phase phase = Phase::Connect;

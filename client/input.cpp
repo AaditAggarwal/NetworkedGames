@@ -39,7 +39,9 @@ static void connectScreenInput(ClientState& s, Conn& conn, double now) {
         for (int i = 0; i < 3; ++i)
             if (CheckCollisionPointRec(m, L.fields[i])) s.focus = i;
         if (CheckCollisionPointRec(m, L.connectBtn)) { beginConnect(s, conn, now); return; }
+        if (CheckCollisionPointRec(m, L.hostBtn)) { s.wantHost = true; return; }
     }
+    if (IsKeyPressed(KEY_F2)) { s.wantHost = true; return; }
     if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_DOWN))
         s.focus = (s.focus + (IsKeyDown(KEY_LEFT_SHIFT) ? 2 : 1)) % 3;
     if (IsKeyPressed(KEY_UP)) s.focus = (s.focus + 2) % 3;

@@ -12,7 +12,8 @@ struct Layout {
     Rectangle own;     // YOUR FLEET grid
     Rectangle enemy;   // ENEMY WATERS grid
     Rectangle fields[3];   // connect screen: host, port, name
-    Rectangle connectBtn;
+    Rectangle connectBtn;   // JOIN
+    Rectangle hostBtn;
 };
 
 const Layout& layout();

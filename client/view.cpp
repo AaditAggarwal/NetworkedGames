@@ -35,7 +35,8 @@ const Layout& layout() {
         l.enemy = {SCREEN_W - 90.0f - GRID_PX, GRID_TOP, GRID_PX, GRID_PX};
         for (int i = 0; i < 3; ++i)
             l.fields[i] = {SCREEN_W / 2.0f - 170.0f, 250.0f + i * 80.0f, 340.0f, 40.0f};
-        l.connectBtn = {SCREEN_W / 2.0f - 90.0f, 500.0f, 180.0f, 46.0f};
+        l.connectBtn = {SCREEN_W / 2.0f - 190.0f, 500.0f, 180.0f, 46.0f};
+        l.hostBtn = {SCREEN_W / 2.0f + 10.0f, 500.0f, 180.0f, 46.0f};
         return l;
     }();
     return L;
@@ -262,7 +263,8 @@ static void drawBanner(const ClientState& s, double now) {
         } else {
             msg = "Fleet deployed. Waiting for the opponent to finish placing...";
         }
-        if (s.waiting && !s.allPlaced()) msg = "Waiting for an opponent to connect...   " + msg;
+        if (s.waiting && !s.allPlaced())
+            msg = (s.hosting ? "Waiting for an opponent to join " + s.joinAt + "   " : "Waiting for an opponent to connect...   ") + msg;
     } else if (s.phase == Phase::Playing) {
         if (!s.turnKnown) msg = "Battle stations!";
         else if (s.myTurn) { msg = s.pendingRow >= 0 ? "Firing..." : "YOUR TURN  -  click a cell in ENEMY WATERS to fire"; col = ACCENT; }
@@ -296,7 +298,8 @@ static void drawStatusAndLog(const ClientState& s) {
     float y = 596;
     DrawRectangle(0, (int)y, SCREEN_W, 30, PANEL_HI);
     std::string conn = s.phase == Phase::Connect ? "Not connected"
-                     : (s.connLost ? "Disconnected " : (s.phase == Phase::Connecting ? "Connecting " : "Connected ")) + s.peer;
+                     : (s.connLost ? "Disconnected " : (s.phase == Phase::Connecting ? "Connecting " : "Connected ")) +
+                           (s.hosting ? "(hosting, join " + s.joinAt + ")" : s.peer);
     std::string status = conn + "  |  " + (s.playerNum ? "Player " + std::to_string(s.playerNum) : "Player ?") +
                          "  |  " + phaseText(s);
     DrawText(status.c_str(), 16, (int)y + 7, 18, TEXT);
@@ -329,7 +332,7 @@ static void drawConnectScreen(const ClientState& s, double now) {
     textCentered("BATTLESHIP", SCREEN_W / 2.0f, 110, 56, TEXT);
     textCentered("CS 4390 - Networked Battleship over TCP", SCREEN_W / 2.0f, 176, 18, DIM);
 
-    const char* labels[3] = {"Server host / IP", "Port", "Your name"};
+    const char* labels[3] = {"Host's IP (only to join)", "Port", "Your name"};
     const std::string* vals[3] = {&s.host, &s.port, &s.name};
     bool editable = s.phase == Phase::Connect;
     for (int i = 0; i < 3; ++i) {
@@ -343,18 +346,23 @@ static void drawConnectScreen(const ClientState& s, double now) {
         DrawText(v.c_str(), (int)f.x + 10, (int)f.y + 10, 20, TEXT);
     }
 
-    Rectangle b = L.connectBtn;
-    bool hov = editable && CheckCollisionPointRec(GetMousePosition(), b);
-    DrawRectangleRounded(b, 0.3f, 6, editable ? (hov ? GOOD : Color{34, 160, 90, 255}) : PANEL_HI);
-    textCentered(editable ? "CONNECT" : "CONNECTING...", b.x + b.width / 2, b.y + 13, 20, BG);
+    const Rectangle btns[2] = {L.connectBtn, L.hostBtn};
+    const char* names[2] = {"JOIN", "HOST"};
+    for (int i = 0; i < 2; ++i) {
+        Rectangle b = btns[i];
+        bool hov = editable && CheckCollisionPointRec(GetMousePosition(), b);
+        DrawRectangleRounded(b, 0.3f, 6, editable ? (hov ? GOOD : Color{34, 160, 90, 255}) : PANEL_HI);
+        textCentered(editable ? names[i] : "CONNECTING...", b.x + b.width / 2, b.y + 13, 20, BG);
+    }
 
     if (s.phase == Phase::Connecting) {
         std::string m = s.peer.empty() ? "Connecting..." : "TCP handshake with " + s.peer + " ... waiting for WELCOME";
+        if (s.hosting) m = "Hosting. The other player joins " + s.joinAt;
         textCentered(m.c_str(), SCREEN_W / 2.0f, 566, 16, DIM);
     } else if (!s.notice.empty()) {
         textCentered(s.notice.c_str(), SCREEN_W / 2.0f, 566, 18, BAD);
     } else {
-        textCentered("Tab to switch fields, Enter to connect", SCREEN_W / 2.0f, 566, 16, DIM);
+        textCentered("Tab to switch fields, Enter to join, F2 to host", SCREEN_W / 2.0f, 566, 16, DIM);
     }
 }
 
