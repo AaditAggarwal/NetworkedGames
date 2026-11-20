@@ -1,1 +1,12 @@
-..... for now
+# build tools for Networked Battleship, installed into a venv
+#   python -m venv .venv            (macOS/Linux: python3)
+#   .venv\Scripts\activate          (macOS/Linux: source .venv/bin/activate)
+#   pip install -r requirements.txt
+#   cmake -S . -B build -G Ninja -DFETCH_RAYLIB=ON      (downloads raylib into build/)
+#   cmake --build build
+# also needs a C++17 compiler, pip can't install one:
+#   Windows: MinGW-w64 g++    macOS: xcode-select --install    Linux: sudo apt install g++
+# Linux only, for the raylib window:
+#   sudo apt install libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+cmake>=3.16,<4
+ninja>=1.11

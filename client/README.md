@@ -12,7 +12,9 @@ This folder contains the raylib window, both grids, the fog-of-war display, mous
 | Game over | **N** to go back to the connect screen, **Esc** to quit |
 | Any time | **F1** turns RAW MODE on or off, which skips the client-side checks so the server's `ERR` replies can be shown |
 
-Command line: `battleship_client [host] [port] [name]`. Given a host, the client connects right away. Otherwise it opens the connect screen.
+Command line: `battleship host <port> [name]` hosts a game, `battleship join <ip> <port> [name]` joins one. With no arguments it opens the connect screen, where **HOST** (or F2) hosts and **JOIN** joins the IP typed in.
+
+Hosting runs the game server (`server/game_server.*`) inside the window. Your own client joins it over 127.0.0.1 and the other player joins over the network.
 
 ## Files
 
@@ -22,7 +24,7 @@ Command line: `battleship_client [host] [port] [name]`. Given a host, the client
 | `state.h/.cpp` | What the client knows (fog of war: only what RESULT / OPP_FIRED said). Parses each server line |
 | `view.h/.cpp` | Draws the connect screen, both grids, legend, ship lists, status strip, protocol log |
 | `input.h/.cpp` | Mouse and keys, which send `HELLO`, `PLACE` and `FIRE` |
-| `conn.h` | **Interface only.** The network calls the GUI needs. Networking (role 1) implements it |
+| `conn.h` / `conn.cpp` | The network calls the GUI needs, implemented over `common/net.h` |
 
 ## What the GUI needs from other roles
 

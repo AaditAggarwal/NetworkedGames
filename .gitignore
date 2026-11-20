@@ -1,2 +1,24 @@
+# build output
 build/
+out/
+cmake-build-*/
+CMakeUserPresets.json
+*.exe
+*.o
+*.obj
+*.log
+
+# python venv for the build tools
+.venv/
+
+# editors / IDEs
 .vscode/
+.vs/
+.idea/
+*.cbp
+*.layout
+*.depend
+
+# OS junk
+.DS_Store
+Thumbs.db
