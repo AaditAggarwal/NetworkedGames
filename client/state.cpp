@@ -16,7 +16,7 @@ static std::vector<std::string> split(const std::string& line) {
     return out;
 }
 
-// ---------------------------------------------------------------- queries
+// queries
 
 int ClientState::nextShipToPlace() const {
     for (int i = 0; i < NUM_SHIPS; ++i)
@@ -62,7 +62,7 @@ int ClientState::myShipsLeft() const {
     return n;
 }
 
-// ---------------------------------------------------------------- updates
+// updates
 
 void ClientState::addLog(bool outgoing, const std::string& text) {
     log.push_back({outgoing, text});

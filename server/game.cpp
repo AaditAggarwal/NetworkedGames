@@ -30,7 +30,7 @@ static std::vector<std::string> split(const std::string& line) {
 
 Game::Game(double turnTimeoutSec) : timeout_(turnTimeoutSec > 0 ? turnTimeoutSec : 0) {}
 
-//---------------------------------------------------------------- output queues
+// output queues
 
 void Game::send(int player, const std::string& text) {
     if (connected(player)) out_.push_back({player, text});
@@ -80,7 +80,7 @@ int Game::freeSlot() const {
     return -1;
 }
 
-//---------------------------------------------------------------- server loop events
+// server loop events
 
 void Game::onConnect(int player, const std::string& addr) {
     if (!valid(player) || p_[player].connected) return;
@@ -136,8 +136,7 @@ void Game::onLine(int player, const std::string& line) {
     err(player, "unknown command " + w[0]);
 }
 
-//---------------------------------------------------------------- HELLO
-
+// Handling Hello from clients
 void Game::handleHello(int player, const std::vector<std::string>& w) {
     Player& me = p_[player];
     if (me.joined) return err(player, "already said HELLO");
@@ -161,7 +160,7 @@ void Game::handleHello(int player, const std::vector<std::string>& w) {
     }
 }
 
-//---------------------------------------------------------------- PLACE
+// PLACE
 
 void Game::handlePlace(int player, const std::vector<std::string>& w) {
     //placing is allowed while still waiting for the opponent, the client shows the placing
@@ -214,7 +213,7 @@ void Game::logBoards(const char* when) {
     for (int i = 0; i < 2; ++i) log(who(i) + " board at " + when + ":\n" + p_[i].board.render());
 }
 
-//---------------------------------------------------------------- FIRE
+// FIRE
 
 void Game::handleFire(int player, const std::vector<std::string>& w) {
     if (phase_ != Phase::Playing) return err(player, "game has not started");
@@ -239,7 +238,7 @@ void Game::handleFire(int player, const std::vector<std::string>& w) {
     sendTurns();
 }
 
-//---------------------------------------------------------------- ending
+// Game Over
 
 void Game::endGame(int winner, const std::string& why) {
     int loser = 1 - winner;
