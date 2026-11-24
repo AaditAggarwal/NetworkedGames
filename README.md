@@ -46,11 +46,11 @@ battleship join 192.168.1.23 5000 Bob
 | Game over | **N** for a new game, **Esc** to quit |
 | Any time | **F1** turns on RAW MODE, which skips the window's own checks so you can see the server reject bad moves |
 
-The bottom of the window shows every message sent (`>`) and received (`<`), so you can see the network traffic while you play.
+The bottom of the window logs every message sent (`>`) and received (`<`).
 
 ## Sharing the game
 
-On Windows the build makes one file, `build\battleship.exe`, with nothing else needed. Send it to the other player and they can run it straight away. If Windows shows "Windows protected your PC", click **More info → Run anyway**.
+On Windows the build makes a single file, `build\battleship.exe`. Send it to the other player and they can run it. If Windows shows "Windows protected your PC", click **More info → Run anyway**.
 
 Mac and Linux players need to build it themselves (see below).
 
@@ -72,9 +72,7 @@ cmake -S . -B build -G Ninja -DFETCH_RAYLIB=ON
 cmake --build build
 ```
 
-- `pip` installs the build tools (CMake and Ninja) into the `.venv` folder only.
-- CMake downloads raylib into the `build` folder by itself.
-- So nothing gets installed on your computer for good.
+`pip` installs CMake and Ninja into `.venv`, and CMake downloads raylib into `build/`.
 
 On Linux, raylib also needs:
 
@@ -100,7 +98,7 @@ build/test_net      # real connections on this computer, including a full game t
 
 ## The messages
 
-The two sides send plain text, one message per line. You can even play by typing into `nc <host-ip> 5000`.
+Messages are plain text, one per line. You can also play by typing into `nc <host-ip> 5000`.
 
 What the player sends:
 
@@ -133,13 +131,13 @@ Board rules:
 
 ## The networking
 
-All the networking is written by hand on the basic socket functions that come with the operating system (Winsock on Windows, sockets on Mac/Linux). No networking library is used.
+Uses the operating system's built-in sockets (Winsock on Windows, sockets on Mac/Linux).
 
 - **Connecting:** the host listens on a port, the joiner connects, and TCP does its three-way handshake.
-- **Nothing freezes:** connecting, sending and receiving never block, so the window keeps drawing while it waits. Joining gives up after 5 seconds if nobody answers.
-- **Splitting messages:** TCP sends a stream of bytes, not separate messages. The program collects the bytes and splits them on the newline, so a message cut in half, or two messages arriving together, still work.
-- **Fast replies:** Nagle's algorithm is turned off, so each short message goes out right away.
-- **Leaving:** closing the window ends the connection. The other side notices (receiving 0 bytes) and shows that the opponent left.
+- **Non-blocking:** connecting, sending and receiving never block, so the window keeps drawing while it waits. Joining gives up after 5 seconds if nobody answers.
+- **Splitting messages:** incoming bytes are buffered and split on the newline, so partial or combined messages are handled.
+- **No delay:** `TCP_NODELAY` is set so small messages are sent immediately.
+- **Leaving:** closing the window ends the connection. The other side notices and shows that the opponent left.
 
 ## Files
 
