@@ -8,18 +8,23 @@
 #include "../common/rules.h"
 #include "../server/board.h"
 
+//how many CHECKs failed across all tests
 static int g_failures = 0;
+//list of every test, filled before main runs
 static std::vector<std::pair<const char*, std::function<void()>>>& registry() {
     static std::vector<std::pair<const char*, std::function<void()>>> r;
     return r;
 }
+//adds a test to the registry when the program starts
 struct Registrar {
     Registrar(const char* name, std::function<void()> fn) { registry().push_back({name, fn}); }
 };
+//TEST(name) { ... } declares a test and registers it
 #define TEST(name)                                         \
     static void name();                                    \
     static Registrar reg_##name(#name, name);              \
     static void name()
+//CHECK prints the failing line and keeps going instead of stopping
 #define CHECK(cond)                                                        \
     do {                                                                   \
         if (!(cond)) {                                                     \
@@ -28,6 +33,7 @@ struct Registrar {
         }                                                                  \
     } while (0)
 
+//ship ids in the same order as SHIPS
 enum { CARRIER, BATTLESHIP, CRUISER, SUBMARINE, DESTROYER };
 
 //a legal fleet: every ship horizontal, one per row, rows a, c, e, g, i
@@ -39,6 +45,7 @@ static Board fullBoard() {
 
 //rules
 
+//a1, j10 and lowercase letters parse to the right row and column
 TEST(parse_cell_corners) {
     int r, c;
     CHECK(parseCell("A1", r, c) && r == 0 && c == 0);
@@ -46,6 +53,7 @@ TEST(parse_cell_corners) {
     CHECK(parseCell("b7", r, c) && r == 1 && c == 6);
 }
 
+//empty, off-board and junk cell names are rejected
 TEST(parse_cell_rejects_bad_input) {
     int r, c;
     CHECK(!parseCell("", r, c));
@@ -59,6 +67,7 @@ TEST(parse_cell_rejects_bad_input) {
     CHECK(!parseCell("A100", r, c));
 }
 
+//every cell turns into a name and back into the same cell
 TEST(cell_name_round_trip) {
     for (int r = 0; r < GRID; ++r)
         for (int c = 0; c < GRID; ++c) {
@@ -69,6 +78,7 @@ TEST(cell_name_round_trip) {
     CHECK(cellName(9, 9) == "J10");
 }
 
+//ship names look up case-insensitively, unknown names give -1
 TEST(ship_index_lookup) {
     CHECK(shipIndex("CARRIER") == CARRIER);
     CHECK(shipIndex("destroyer") == DESTROYER);
@@ -77,12 +87,14 @@ TEST(ship_index_lookup) {
     CHECK(shipIndex("") == -1);
 }
 
+//the fleet is 5+4+3+3+2 = 17 cells
 TEST(ship_lengths_total_17) {
     int total = 0;
     for (const ShipType& s : SHIPS) total += s.len;
     CHECK(total == 17);
 }
 
+//only H and V are valid directions
 TEST(parse_orientation) {
     bool v = true;
     CHECK(parseOrientation("H", v) && !v);
@@ -94,6 +106,7 @@ TEST(parse_orientation) {
 
 //placing
 
+//H covers the cells to the right of the start
 TEST(place_horizontal_extends_right) {
     Board b;
     CHECK(b.place(CARRIER, 0, 0, false) == PlaceError::None);
@@ -102,6 +115,7 @@ TEST(place_horizontal_extends_right) {
     CHECK(b.shipAt(1, 0) == -1);
 }
 
+//V covers the cells below the start
 TEST(place_vertical_extends_down) {
     Board b;
     CHECK(b.place(DESTROYER, 3, 4, true) == PlaceError::None);
@@ -111,6 +125,7 @@ TEST(place_vertical_extends_down) {
     CHECK(b.shipAt(3, 5) == -1);
 }
 
+//ships can touch the board edges, still can't overlap
 TEST(place_flush_with_edges_is_ok) {
     Board b;
     CHECK(b.place(CARRIER, 9, 5, false) == PlaceError::None);   //j6..j10
@@ -120,6 +135,7 @@ TEST(place_flush_with_edges_is_ok) {
     CHECK(b.place(CRUISER, 0, 0, true) == PlaceError::None);       //a1..c1
 }
 
+//ships hanging off any edge are rejected and leave nothing behind
 TEST(place_out_of_bounds) {
     Board b;
     CHECK(b.place(CARRIER, 0, 6, false) == PlaceError::OutOfBounds);  //a7..a11
@@ -130,6 +146,7 @@ TEST(place_out_of_bounds) {
     CHECK(b.shipAt(0, 6) == -1);   //rejected placement left nothing behind
 }
 
+//crossing another ship is rejected and the board stays the same
 TEST(place_overlap_rejected_and_board_unchanged) {
     Board b;
     CHECK(b.place(CARRIER, 2, 0, false) == PlaceError::None);       //c1..c5
@@ -140,6 +157,7 @@ TEST(place_overlap_rejected_and_board_unchanged) {
     CHECK(b.shipAt(2, 3) == CARRIER);
 }
 
+//ships right next to each other are allowed
 TEST(place_adjacent_is_ok) {
     Board b;
     CHECK(b.place(CARRIER, 0, 0, false) == PlaceError::None);
@@ -147,6 +165,7 @@ TEST(place_adjacent_is_ok) {
     CHECK(b.place(DESTROYER, 0, 5, false) == PlaceError::None);
 }
 
+//the same ship can't be placed twice
 TEST(place_twice_rejected) {
     Board b;
     CHECK(b.place(CRUISER, 0, 0, false) == PlaceError::None);
@@ -154,12 +173,14 @@ TEST(place_twice_rejected) {
     CHECK(b.shipAt(5, 5) == -1);
 }
 
+//ship ids outside 0..4 are rejected
 TEST(place_unknown_ship) {
     Board b;
     CHECK(b.place(-1, 0, 0, false) == PlaceError::UnknownShip);
     CHECK(b.place(NUM_SHIPS, 0, 0, false) == PlaceError::UnknownShip);
 }
 
+//allPlaced is only true after the 5th ship
 TEST(all_placed) {
     Board b;
     CHECK(!b.allPlaced());
@@ -171,6 +192,7 @@ TEST(all_placed) {
 
 //firing
 
+//shooting water is a miss
 TEST(fire_miss) {
     Board b = fullBoard();
     ShotResult r = b.fire(1, 0);   //b1, row b is empty
@@ -179,6 +201,7 @@ TEST(fire_miss) {
     CHECK(shotToken(r) == "MISS");
 }
 
+//first hit on the destroyer is HIT, second is SUNK DESTROYER
 TEST(fire_hit_then_sunk) {
     Board b = fullBoard();
     ShotResult r1 = b.fire(8, 0);  //destroyer at i1..i2
@@ -192,6 +215,7 @@ TEST(fire_hit_then_sunk) {
     CHECK(b.shipsLeft() == NUM_SHIPS - 1);
 }
 
+//a cell can only be shot once, hit or miss
 TEST(fire_same_cell_twice_rejected) {
     Board b = fullBoard();
     CHECK(b.fire(0, 0).shot == Shot::Hit);
@@ -201,6 +225,7 @@ TEST(fire_same_cell_twice_rejected) {
     CHECK(b.fire(5, 5).shot == Shot::AlreadyFired);
 }
 
+//a rejected repeat shot doesn't add a hit
 TEST(repeat_hit_does_not_count_toward_sinking) {
     Board b = fullBoard();
     b.fire(8, 0);
@@ -209,6 +234,7 @@ TEST(repeat_hit_does_not_count_toward_sinking) {
     CHECK(b.fire(8, 1).shot == Shot::Sunk);
 }
 
+//shots off the board are rejected
 TEST(fire_out_of_bounds) {
     Board b = fullBoard();
     CHECK(b.fire(-1, 0).shot == Shot::OutOfBounds);
@@ -217,6 +243,7 @@ TEST(fire_out_of_bounds) {
     CHECK(!b.fire(10, 10).ok());
 }
 
+//sweeping the whole board ends the game on the last ship cell
 TEST(sinking_every_ship_ends_game) {
     Board b = fullBoard();
     int sunk = 0;
@@ -236,6 +263,7 @@ TEST(sinking_every_ship_ends_game) {
     CHECK(false);   //never reached allSunk
 }
 
+//exactly 17 hits sinks the whole fleet
 TEST(seventeen_hits_win) {
     Board b = fullBoard();
     int hits = 0;
@@ -250,6 +278,7 @@ TEST(seventeen_hits_win) {
     CHECK(b.shipsLeft() == 0);
 }
 
+//hits on a vertical ship sink it, a shot just above it misses
 TEST(vertical_ship_sinks) {
     Board b;
     b.place(SUBMARINE, 4, 7, true);   //e8, f8, g8
@@ -261,6 +290,7 @@ TEST(vertical_ship_sinks) {
     CHECK(shotToken(r) == "SUNK SUBMARINE");
 }
 
+//reset wipes ships and shots so the board can be reused
 TEST(reset_clears_everything) {
     Board b = fullBoard();
     b.fire(0, 0);
@@ -271,6 +301,7 @@ TEST(reset_clears_everything) {
     CHECK(b.place(CARRIER, 0, 0, false) == PlaceError::None);
 }
 
+//ERR reasons have no newline so they stay one protocol line
 TEST(error_texts_are_single_line) {
     PlaceError pe[] = {PlaceError::UnknownShip, PlaceError::AlreadyPlaced,
                        PlaceError::OutOfBounds, PlaceError::Overlap};
@@ -278,6 +309,7 @@ TEST(error_texts_are_single_line) {
     CHECK(std::string(shotErrorText(Shot::AlreadyFired)) == "already fired at that cell");
 }
 
+//render draws X for hits, o for misses, ship letters otherwise
 TEST(render_shows_ships_hits_and_misses) {
     Board b;
     b.place(DESTROYER, 0, 0, false);
@@ -288,6 +320,7 @@ TEST(render_shows_ships_hits_and_misses) {
     CHECK(s.find("B  . o") != std::string::npos);
 }
 
+//runs every test, prints PASS/FAIL for each, exit code 1 if any failed
 int main() {
     int failedTests = 0;
     for (auto& t : registry()) {
